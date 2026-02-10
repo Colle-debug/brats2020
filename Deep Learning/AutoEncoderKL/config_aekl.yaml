@@ -1,0 +1,65 @@
+project: "vae-gan-training"
+
+model:
+  spatial_dims: 3
+  autoencoder:
+    in_channels: 1
+    out_channels: 1
+    num_channels: [32, 64, 128, 128]
+    latent_channels: 3
+    num_res_blocks: 1
+    norm_num_groups: 8
+    attention_levels: [false, false, false, false]
+  discriminator:
+    in_channels: 1
+    out_channels: 1
+    num_channels: 32
+    num_layers_d: 3
+    kernel_size: 4
+    padding: 1
+
+training:
+  epochs: 100
+  train_batch_size: 1
+  test_batch_size: 8
+  accumulation_steps: 8
+  lr_g: 0.0001
+  lr_d: 0.0005
+  seed: 42
+  val_interval: 5
+  early_stopping_patience: 5 # Patience in terms of validation steps, if val step is high, consider a lower patience. 
+
+data:
+  output_shape: [112, 112, 96]
+  modalities_list: ["t1ce"]
+  norm_type: "minmax"
+  resample_shape: null # If modified among runs, make sure to delete previously preprocessed samples.
+  store_locally: true # false > on-the-fly resampling, true > store the resampled dataset.
+  dataset_source: "preprocessed"
+  kaggle_preproccesed_dataset: "vinzollo/brats2020-training-validation-data-t1ce-downscaled"
+  
+loss:
+  reconstruction:
+    type: "l1"
+    weight: 1.0
+  kl_loss:
+    weight: 0.000001
+  perceptual:
+    spatial_dims: 3
+    weight: 0.001
+    network: "squeeze"
+    fake_3d_ratio: 0.25
+  adversarial:
+    type: "least_squares"
+    gen_weight: 0.01
+    disc_weight: 1.0 # Useless-ish
+    disc_steps: 1
+
+experiment:
+  checkpoint_dir: "checkpoints"
+  processed_path: "/content/processed"
+  wandb_logging: true
+
+hardware:
+  device: "cuda"
+  num_workers: 0
